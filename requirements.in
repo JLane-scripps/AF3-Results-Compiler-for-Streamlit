@@ -1,0 +1,3 @@
+# requirements.in
+pandas
+XlsxWriter

@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="First Commit; testing Streamlit viability.">
+    <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/requirements.in" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -87,7 +88,15 @@
       <option name="project" value="LOCAL" />
       <updated>1740087393670</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Added buttons for the user to control the beginning and end of the process.">
+      <option name="closed" value="true" />
+      <created>1741296593445</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1741296593445</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -103,6 +112,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First Commit; testing Streamlit viability." />
-    <option name="LAST_COMMIT_MESSAGE" value="First Commit; testing Streamlit viability." />
+    <MESSAGE value="Added buttons for the user to control the beginning and end of the process." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added buttons for the user to control the beginning and end of the process." />
   </component>
 </project>
