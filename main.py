@@ -28,9 +28,14 @@ def extract_bait_prey(file_identifier):
         return None, None
 
 
-st.title("Summary Confidences Extraction")
+st.title("AlphaFold3 Summary Confidences Extraction")
 st.write(
-    "Upload your ZIP files containing the summary JSON files (drag & drop or click to browse). Once all desired files are uploaded, click the **Begin Extraction** button.")
+    "Upload your ZIP files containing the summary JSON files (drag & drop or click to browse). "
+    "Once all desired files are uploaded, click the **Begin Extraction** button.")
+st.write(
+    "This tool reads 'X_summary_confidence_4.json' files from uploaded zipped folders, sorts them into sheets per Bait protein,"
+    "sorts by largest IPTM value, and color-codes the results. Files must be smaller than 200MB, but you may upload as many as desired."
+    "It is recommended to download results from AlphaFold3 in groups of 25 for ease. A preview of results is displayed below.")
 
 # Allow users to upload multiple ZIP files.
 uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
