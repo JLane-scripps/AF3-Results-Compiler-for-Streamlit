@@ -97,47 +97,54 @@ if uploaded_files:
             st.write("### Extracted Data:")
             st.dataframe(df)
 
-            # Create an in-memory Excel file with conditional formatting.
+            # Create an in-memory Excel file with conditional formatting, with one sheet per Bait
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, sheet_name='Sheet1', index=False)
                 workbook = writer.book
-                worksheet = writer.sheets['Sheet1']
-
-                # Determine the number of rows (header is in row 1; data starts in row 2)
-                num_rows = len(df) + 1
-                # "iptm" is the 3rd column (Excel column C).
-                iptm_range = f"C2:C{num_rows}"
-
                 # Define cell formats with the revised colors.
                 format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
                 format_light_blue = workbook.add_format({'bg_color': '#ADD8E6'})
                 format_light_gray = workbook.add_format({'bg_color': '#D3D3D3'})
 
-                # Apply conditional formatting:
-                # 1. For iptm > 0.79: light yellow.
-                worksheet.conditional_format(iptm_range, {
-                    'type': 'cell',
-                    'criteria': '>',
-                    'value': 0.79,
-                    'format': format_light_yellow
-                })
-                # 2. For 0.79 >= iptm >= 0.6: light blue.
-                worksheet.conditional_format(iptm_range, {
-                    'type': 'cell',
-                    'criteria': 'between',
-                    'minimum': 0.6,
-                    'maximum': 0.79,
-                    'format': format_light_blue
-                })
-                # 3. For 0.6 > iptm > 0.4: light gray (using a formula to enforce strict inequality).
-                worksheet.conditional_format(iptm_range, {
-                    'type': 'formula',
-                    'criteria': '=AND(C2>0.4, C2<0.6)',
-                    'format': format_light_gray
-                })
+                # Group the DataFrame by the "Bait" column
+                for bait, group_df in df.groupby("Bait"):
+                    # Create a sheet name from the bait value.
+                    # Excel sheet names have a maximum length of 31 characters.
+                    sheet_name = str(bait)[:31]
+                    group_df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-            # Reset the buffer's pointer to the beginning.
+                    # Access the worksheet we just created.
+                    worksheet = writer.sheets[sheet_name]
+
+                    # Determine the number of rows (header is in row 1; data starts in row 2)
+                    num_rows = len(group_df) + 1  # +1 for header
+                    # "iptm" is the 3rd column (Excel column C).
+                    iptm_range = f"C2:C{num_rows}"
+
+                    # Apply conditional formatting on this sheet:
+                    # 1. For iptm > 0.79: light yellow.
+                    worksheet.conditional_format(iptm_range, {
+                        'type': 'cell',
+                        'criteria': '>',
+                        'value': 0.79,
+                        'format': format_light_yellow
+                    })
+                    # 2. For 0.79 >= iptm >= 0.6: light blue.
+                    worksheet.conditional_format(iptm_range, {
+                        'type': 'cell',
+                        'criteria': 'between',
+                        'minimum': 0.6,
+                        'maximum': 0.79,
+                        'format': format_light_blue
+                    })
+                    # 3. For 0.6 > iptm > 0.4: light gray (using a formula to enforce strict inequality).
+                    worksheet.conditional_format(iptm_range, {
+                        'type': 'formula',
+                        'criteria': '=AND(C2>0.4, C2<0.6)',
+                        'format': format_light_gray
+                    })
+
+            # Reset the buffer pointer and get the Excel data.
             output.seek(0)
             processed_data = output.getvalue()
 
