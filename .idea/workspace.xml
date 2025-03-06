@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -119,7 +118,15 @@
       <option name="project" value="LOCAL" />
       <updated>1741299668196</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Formatted final results to display as one Bait protein per sheet">
+      <option name="closed" value="true" />
+      <created>1741300254779</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1741300254779</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -139,6 +146,7 @@
     <MESSAGE value="Added requirements .in and .txt" />
     <MESSAGE value="minor fix" />
     <MESSAGE value="Fixed Excel buffer corruption" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed Excel buffer corruption" />
+    <MESSAGE value="Formatted final results to display as one Bait protein per sheet" />
+    <option name="LAST_COMMIT_MESSAGE" value="Formatted final results to display as one Bait protein per sheet" />
   </component>
 </project>

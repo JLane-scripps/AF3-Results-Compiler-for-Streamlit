@@ -97,6 +97,9 @@ if uploaded_files:
             st.write("### Extracted Data:")
             st.dataframe(df)
 
+            # Sort the DataFrame by largest iptm value (descending)
+            df = df.sort_values(by="iptm", ascending=False)
+
             # Create an in-memory Excel file with conditional formatting, with one sheet per Bait
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -106,7 +109,7 @@ if uploaded_files:
                 format_light_blue = workbook.add_format({'bg_color': '#ADD8E6'})
                 format_light_gray = workbook.add_format({'bg_color': '#D3D3D3'})
 
-                # Group the DataFrame by the "Bait" column
+                # Group the sorted DataFrame by the "Bait" column
                 for bait, group_df in df.groupby("Bait"):
                     # Create a sheet name from the bait value.
                     # Excel sheet names have a maximum length of 31 characters.
