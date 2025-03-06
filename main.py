@@ -121,7 +121,6 @@ if uploaded_files:
                     'format': format_light_gray
                 })
 
-                writer.save()
                 processed_data = output.getvalue()
 
             # Provide a download button for the generated Excel file.
