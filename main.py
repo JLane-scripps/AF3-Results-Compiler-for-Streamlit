@@ -35,28 +35,43 @@ st.write(
 # Allow users to upload multiple ZIP files.
 uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
 
+# Create a placeholder for the debug log container (scrollable text area)
+log_container = st.empty()
+
 if uploaded_files:
     if st.button("Begin Extraction"):
+        # Use a list to accumulate debug messages.
+        debug_lines = []
+
+
+        def update_log(message):
+            debug_lines.append(message)
+            log_container.text_area("Debug Log", "\n".join(debug_lines), height=300)
+
+
         results = []
+        update_log("Starting extraction process...")
+
         for uploaded_file in uploaded_files:
-            st.write(f"Processing ZIP file: **{uploaded_file.name}**")
+            update_log(f"Processing ZIP file: {uploaded_file.name}")
             try:
                 with zipfile.ZipFile(uploaded_file) as z:
                     for item in z.namelist():
                         if item.endswith("summary_confidences_4.json"):
-                            # Create a unique identifier combining ZIP name and the internal file basename.
                             file_identifier = f"{uploaded_file.name}::{os.path.basename(item)}"
-                            st.write(f"Processing file: **{file_identifier}**")
+                            update_log(f"Processing file: {file_identifier}")
                             try:
                                 with z.open(item) as f:
                                     data = json.load(f)
                             except Exception as e:
                                 st.error(f"Error decoding JSON in {file_identifier}: {e}")
+                                update_log(f"Error decoding JSON in {file_identifier}: {e}")
                                 continue
 
                             bait, prey = extract_bait_prey(file_identifier)
                             if bait is None or prey is None:
                                 st.warning(f"DEBUG: Could not extract bait/prey from file: {file_identifier}")
+                                update_log(f"DEBUG: Could not extract bait/prey from file: {file_identifier}")
                                 bait, prey = "Unknown", "Unknown"
 
                             record = {
@@ -75,6 +90,7 @@ if uploaded_files:
                             results.append(record)
             except Exception as e:
                 st.error(f"Error processing ZIP file {uploaded_file.name}: {e}")
+                update_log(f"Error processing ZIP file {uploaded_file.name}: {e}")
 
         if results:
             df = pd.DataFrame(results)
@@ -121,14 +137,17 @@ if uploaded_files:
                     'format': format_light_gray
                 })
 
-                processed_data = output.getvalue()
+            # Reset the buffer's pointer to the beginning.
+            output.seek(0)
+            processed_data = output.getvalue()
 
-            # Provide a download button for the generated Excel file.
             st.download_button(
                 label="Download Excel File",
                 data=processed_data,
                 file_name="summary_confidences_export.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+            update_log("Extraction complete. Excel file is ready for download.")
         else:
             st.info("No valid JSON files found in the uploaded ZIP files.")
+            update_log("No valid JSON files found.")
