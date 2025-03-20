@@ -57,7 +57,7 @@ def update_debug_log(message):
     # Append the new message.
     st.session_state.debug_messages.append(message)
     # Update the text area (height can be adjusted as needed).
-    debug_container.text_area("Debug Log", "\n".join(st.session_state.debug_messages), height=400)
+    debug_container.text_area("Debug Log", "\n".join(st.session_state.debug_messages), height=150)
 
 
 # --- File Uploader (Multi-file Allowed) ---

@@ -1,0 +1,15 @@
+# ..streamlit/config.toml
+# This is the configuration options for the Streamlit app.
+
+[server]
+headless = true
+port = 8501
+maxUploadSize = 2048
+enableCORS = false
+
+[theme]
+primaryColor = "#F63366"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
