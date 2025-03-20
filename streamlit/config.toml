@@ -1,0 +1,7 @@
+# .streamlit/config.toml
+# This is the configuration options for the Streamlit app.
+
+[server]
+# Increase maximum upload file size. This is the largest size an individual file can be.
+maxUploadSize = 4500
+

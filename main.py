@@ -5,15 +5,17 @@ import io
 import json
 import re
 import os
+import gc
 
 
+# --- Helper Function ---
 def extract_bait_prey(file_identifier):
     """
     Extracts bait and prey names from a file identifier.
     Expected pattern: ..._bait_<Bait>_prey_<Prey>_summary_confidences_4.json
-    This regex excludes '/' and '\' but allows underscores in the names.
+    This regex excludes '/' and '\' but allows underscores.
     """
-    # For files in ZIP archives, use only the basename of the internal file.
+    # For ZIP-internal files, work with the basename only.
     if "::" in file_identifier:
         filename = os.path.basename(file_identifier.split("::")[-1])
     else:
@@ -21,62 +23,56 @@ def extract_bait_prey(file_identifier):
     pattern = r'bait_([^/\\]+)_prey_([^/\\]+)(?=_summary_confidences_4)'
     match = re.search(pattern, filename)
     if match:
-        bait = match.group(1)
-        prey = match.group(2)
-        return bait, prey
+        return match.group(1), match.group(2)
     else:
         return None, None
 
 
-st.title("AlphaFold3 Summary Confidences Extraction")
-st.write(
-    "Upload your ZIP files containing the summary JSON files (drag & drop or click to browse). "
-    "Once all desired files are uploaded, click the **Begin Extraction** button.")
-st.write(
-    "This tool reads 'X_summary_confidence_4.json' files from uploaded zipped folders, sorts them into sheets per Bait protein,"
-    "sorts by largest IPTM value, and color-codes the results. Files must be smaller than 200MB, but you may upload as many as desired."
-    "It is recommended to download results from AlphaFold3 in groups of 25 for ease. A preview of results is displayed below.")
+# --- Session State Initialization ---
+if "processed_records" not in st.session_state:
+    st.session_state.processed_records = []  # List of dictionaries from processed JSON files.
+if "processed_file_names" not in st.session_state:
+    st.session_state.processed_file_names = []  # List of names of ZIP files already processed.
 
-# Allow users to upload multiple ZIP files.
+# --- App Title and Instructions ---
+st.title("Summary Confidences Extraction with Minimal RAM Usage")
+st.write("""
+Upload the ZIP files downloaded from AlphaFold3. (Drag & Drop or Browse).
+ZIP files MUST be smaller than 2GB each. Do not upload more than a combined 2GB at a time. 
+You may continue adding more ZIP files after the previous batch has been processed.  
+Each file will be processed immediately upon upload (one at a time), and then its memory will be released.  
+The names of processed files will be displayed. Duplicate uploads will be ignored.
+When finished, click **Generate Excel** to consolidate all results.
+""")
+
+# --- File Uploader (Multi-file Allowed) ---
 uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
 
-# Create a placeholder for the debug log container (scrollable text area)
-log_container = st.empty()
-
 if uploaded_files:
-    if st.button("Begin Extraction"):
-        # Use a list to accumulate debug messages.
-        debug_lines = []
-
-
-        def update_log(message):
-            debug_lines.append(message)
-            log_container.text_area("Debug Log", "\n".join(debug_lines), height=300)
-
-
-        results = []
-        update_log("Starting extraction process...")
-
-        for uploaded_file in uploaded_files:
-            update_log(f"Processing ZIP file: {uploaded_file.name}")
+    # Process each uploaded file one by one.
+    for file in uploaded_files:
+        # Only process files that have not been processed yet.
+        if file.name not in st.session_state.processed_file_names:
+            st.write(f"Processing file: **{file.name}**")
             try:
-                with zipfile.ZipFile(uploaded_file) as z:
+                # Read the entire ZIP file into a BytesIO object.
+                file_content = file.read()
+                zip_bytes = io.BytesIO(file_content)
+                with zipfile.ZipFile(zip_bytes) as z:
                     for item in z.namelist():
                         if item.endswith("summary_confidences_4.json"):
-                            file_identifier = f"{uploaded_file.name}::{os.path.basename(item)}"
-                            update_log(f"Processing file: {file_identifier}")
+                            file_identifier = f"{file.name}::{os.path.basename(item)}"
+                            st.write(f"  Reading: **{file_identifier}**")
                             try:
                                 with z.open(item) as f:
                                     data = json.load(f)
                             except Exception as e:
                                 st.error(f"Error decoding JSON in {file_identifier}: {e}")
-                                update_log(f"Error decoding JSON in {file_identifier}: {e}")
                                 continue
 
                             bait, prey = extract_bait_prey(file_identifier)
                             if bait is None or prey is None:
-                                st.warning(f"DEBUG: Could not extract bait/prey from file: {file_identifier}")
-                                update_log(f"DEBUG: Could not extract bait/prey from file: {file_identifier}")
+                                st.warning(f"DEBUG: Could not extract bait/prey from {file_identifier}")
                                 bait, prey = "Unknown", "Unknown"
 
                             record = {
@@ -92,77 +88,75 @@ if uploaded_files:
                                 "chain pair iptm": json.dumps(data.get("chain_pair_iptm")),
                                 "chain pair pae min": json.dumps(data.get("chain_pair_pae_min"))
                             }
-                            results.append(record)
+                            st.session_state.processed_records.append(record)
+                st.session_state.processed_file_names.append(file.name)
+                st.write(f"Finished processing: **{file.name}**")
             except Exception as e:
-                st.error(f"Error processing ZIP file {uploaded_file.name}: {e}")
-                update_log(f"Error processing ZIP file {uploaded_file.name}: {e}")
+                st.error(f"Error processing file {file.name}: {e}")
+            finally:
+                # Release memory used by this file.
+                try:
+                    file.close()  # Close the uploaded file.
+                except Exception:
+                    pass
+                del file_content, zip_bytes
+                gc.collect()
 
-        if results:
-            df = pd.DataFrame(results)
-            st.write("### Extracted Data:")
-            st.dataframe(df)
+# --- Display Processed File Names ---
+if st.session_state.processed_file_names:
+    st.write("### Processed Files:")
+    for name in st.session_state.processed_file_names:
+        st.write(name)
 
-            # Sort the DataFrame by largest iptm value (descending)
-            df = df.sort_values(by="iptm", ascending=False)
+# --- Generate Excel Button ---
+if st.session_state.processed_records:
+    if st.button("Generate Excel"):
+        # Combine all processed records into a DataFrame.
+        df = pd.DataFrame(st.session_state.processed_records)
+        # Sort the DataFrame by iptm in descending order.
+        df = df.sort_values(by="iptm", ascending=False)
 
-            # Create an in-memory Excel file with conditional formatting, with one sheet per Bait
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                workbook = writer.book
-                # Define cell formats with the revised colors.
-                format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
-                format_light_blue = workbook.add_format({'bg_color': '#ADD8E6'})
-                format_light_gray = workbook.add_format({'bg_color': '#D3D3D3'})
+        # Create an in-memory Excel file with one sheet per Bait.
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            workbook = writer.book
+            # Define conditional formats.
+            format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
+            format_light_blue = workbook.add_format({'bg_color': '#ADD8E6'})
+            format_light_gray = workbook.add_format({'bg_color': '#D3D3D3'})
 
-                # Group the sorted DataFrame by the "Bait" column
-                for bait, group_df in df.groupby("Bait"):
-                    # Create a sheet name from the bait value.
-                    # Excel sheet names have a maximum length of 31 characters.
-                    sheet_name = str(bait)[:31]
-                    group_df.to_excel(writer, sheet_name=sheet_name, index=False)
+            for bait, group_df in df.groupby("Bait"):
+                # Use bait as sheet name (max 31 characters).
+                sheet_name = str(bait)[:31]
+                group_df.to_excel(writer, sheet_name=sheet_name, index=False)
+                worksheet = writer.sheets[sheet_name]
+                num_rows = len(group_df) + 1  # +1 for header.
+                iptm_range = f"C2:C{num_rows}"  # Assuming 'iptm' is column C.
 
-                    # Access the worksheet we just created.
-                    worksheet = writer.sheets[sheet_name]
-
-                    # Determine the number of rows (header is in row 1; data starts in row 2)
-                    num_rows = len(group_df) + 1  # +1 for header
-                    # "iptm" is the 3rd column (Excel column C).
-                    iptm_range = f"C2:C{num_rows}"
-
-                    # Apply conditional formatting on this sheet:
-                    # 1. For iptm > 0.79: light yellow.
-                    worksheet.conditional_format(iptm_range, {
-                        'type': 'cell',
-                        'criteria': '>',
-                        'value': 0.79,
-                        'format': format_light_yellow
-                    })
-                    # 2. For 0.79 >= iptm >= 0.6: light blue.
-                    worksheet.conditional_format(iptm_range, {
-                        'type': 'cell',
-                        'criteria': 'between',
-                        'minimum': 0.6,
-                        'maximum': 0.79,
-                        'format': format_light_blue
-                    })
-                    # 3. For 0.6 > iptm > 0.4: light gray (using a formula to enforce strict inequality).
-                    worksheet.conditional_format(iptm_range, {
-                        'type': 'formula',
-                        'criteria': '=AND(C2>0.4, C2<0.6)',
-                        'format': format_light_gray
-                    })
-
-            # Reset the buffer pointer and get the Excel data.
-            output.seek(0)
-            processed_data = output.getvalue()
-
-            st.download_button(
-                label="Download Excel File",
-                data=processed_data,
-                file_name="summary_confidences_export.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            update_log("Extraction complete. Excel file is ready for download.")
-        else:
-            st.info("No valid JSON files found in the uploaded ZIP files.")
-            update_log("No valid JSON files found.")
+                # Apply conditional formatting.
+                worksheet.conditional_format(iptm_range, {
+                    'type': 'cell',
+                    'criteria': '>',
+                    'value': 0.79,
+                    'format': format_light_yellow
+                })
+                worksheet.conditional_format(iptm_range, {
+                    'type': 'cell',
+                    'criteria': 'between',
+                    'minimum': 0.6,
+                    'maximum': 0.79,
+                    'format': format_light_blue
+                })
+                worksheet.conditional_format(iptm_range, {
+                    'type': 'formula',
+                    'criteria': '=AND(C2>0.4, C2<0.6)',
+                    'format': format_light_gray
+                })
+        output.seek(0)
+        processed_data = output.getvalue()
+        st.download_button(
+            label="Download Excel File",
+            data=processed_data,
+            file_name="summary_confidences_export.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )

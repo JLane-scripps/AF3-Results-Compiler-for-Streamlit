@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/streamlit/config.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
@@ -27,8 +28,10 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/jeffl/OneDrive/Documents/AlphaFold3 Results Compiler for Streamlit&quot;
   }
 }</component>
   <component name="RunManager">
@@ -135,7 +138,15 @@
       <option name="project" value="LOCAL" />
       <updated>1741301107486</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Adjusted instruction /description text.">
+      <option name="closed" value="true" />
+      <created>1741302174687</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1741302174687</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -157,6 +168,8 @@
     <MESSAGE value="Fixed Excel buffer corruption" />
     <MESSAGE value="Formatted final results to display as one Bait protein per sheet" />
     <MESSAGE value="Sort final results by largest IPTM, so no adjustments are needed on file open." />
-    <option name="LAST_COMMIT_MESSAGE" value="Sort final results by largest IPTM, so no adjustments are needed on file open." />
+    <MESSAGE value="Adjusted instruction /description text." />
+    <MESSAGE value="Adjusted" />
+    <option name="LAST_COMMIT_MESSAGE" value="Adjusted" />
   </component>
 </project>
