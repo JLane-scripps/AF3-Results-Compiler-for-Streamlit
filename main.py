@@ -35,9 +35,11 @@ if "processed_file_names" not in st.session_state:
     st.session_state.processed_file_names = []  # List of names of ZIP files already processed.
 
 # --- App Title and Instructions ---
-st.title("Summary Confidences Extraction with Minimal RAM Usage")
+st.title("AlphaFold3 Results Compiler")
 st.write("""
-Upload the ZIP files downloaded from AlphaFold3. (Drag & Drop or Browse).
+This app compiles Summary Confidence Reports to easily analyze.
+
+Upload the ZIP files downloaded from AlphaFold3. (Drag & Drop or Browse). 
 ZIP files MUST be smaller than 2GB each. Do not upload more than a combined 2GB at a time. 
 You may continue adding more ZIP files after the previous batch has been processed.  
 Each file will be processed immediately upon upload (one at a time), and then its memory will be released.  
@@ -45,24 +47,38 @@ The names of processed files will be displayed. Duplicate uploads will be ignore
 When finished, click **Generate Excel** to consolidate all results.
 """)
 
+# --- Initialize the debug log list in session state if it doesn't exist. ---
+if "debug_messages" not in st.session_state:
+    st.session_state.debug_messages = []
+# Create an empty container for the debug log.
+debug_container = st.empty()
+
+def update_debug_log(message):
+    # Append the new message.
+    st.session_state.debug_messages.append(message)
+    # Update the text area (height can be adjusted as needed).
+    debug_container.text_area("Debug Log", "\n".join(st.session_state.debug_messages), height=400)
+
+
 # --- File Uploader (Multi-file Allowed) ---
 uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
 
 if uploaded_files:
     # Process each uploaded file one by one.
     for file in uploaded_files:
-        # Only process files that have not been processed yet.
+        # Only process files that have not been processed yet. This ignores duplicates.
         if file.name not in st.session_state.processed_file_names:
-            st.write(f"Processing file: **{file.name}**")
+            update_debug_log(f"Processing file: **{file.name}**")
             try:
-                # Read the entire ZIP file into a BytesIO object.
+                # Read the entire ZIP file into a BytesIO object named "z".
                 file_content = file.read()
                 zip_bytes = io.BytesIO(file_content)
                 with zipfile.ZipFile(zip_bytes) as z:
                     for item in z.namelist():
+                        # ONLY reads the 4th summary_confidences json file, as that is the only one we want.
                         if item.endswith("summary_confidences_4.json"):
                             file_identifier = f"{file.name}::{os.path.basename(item)}"
-                            st.write(f"  Reading: **{file_identifier}**")
+                            update_debug_log(f"  Reading: **{file_identifier}**")
                             try:
                                 with z.open(item) as f:
                                     data = json.load(f)
@@ -90,9 +106,11 @@ if uploaded_files:
                             }
                             st.session_state.processed_records.append(record)
                 st.session_state.processed_file_names.append(file.name)
-                st.write(f"Finished processing: **{file.name}**")
+                update_debug_log(f"Finished processing: **{file.name}**")
+                # Catch errors ( "e" ) both with Streamlit and the debug log.
             except Exception as e:
                 st.error(f"Error processing file {file.name}: {e}")
+                update_debug_log(f"Error processing file {file.name}: {e}")
             finally:
                 # Release memory used by this file.
                 try:

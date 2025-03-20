@@ -5,7 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/streamlit/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/streamlit/config.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,7 +153,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742500688882</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Redesigned the upload process to extract data from uploaded ZIP files immediately, then release them from RAM, which should prevent the app from crashing. Increased the file upload limit from 200MB to 2GB. Revised instructions.">
+      <option name="closed" value="true" />
+      <created>1742500734825</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1742500734825</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
