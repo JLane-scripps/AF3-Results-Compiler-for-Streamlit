@@ -3,5 +3,5 @@
 
 [server]
 # Increase maximum upload file size. This is the largest size an individual file can be.
-maxUploadSize = 4500
+maxUploadSize = 2000
 
