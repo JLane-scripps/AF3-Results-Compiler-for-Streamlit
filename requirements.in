@@ -1,3 +1,4 @@
 # requirements.in
 pandas
 XlsxWriter
+psutil
