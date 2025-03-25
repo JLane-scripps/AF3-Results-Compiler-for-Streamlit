@@ -52,9 +52,6 @@ if "debug_messages" not in st.session_state:
     st.session_state.debug_messages = []
 # Create an empty container for the debug log.
 debug_container = st.empty()
-# Record RAM usage before the first upload in the Debug log
-process = psutil.Process(os.getpid())
-st.write(f"Memory on initialization: {process.memory_info().rss / 1024 ** 2:.2f} MB")
 
 def update_debug_log(message):
     # Append the new message.
@@ -62,26 +59,35 @@ def update_debug_log(message):
     # Update the text area (height can be adjusted as needed).
     debug_container.text_area("Debug Log", "\n".join(st.session_state.debug_messages), height=150)
 
+# -- SYSTEM MEMORY --
+# Get system memory details
+memory_info = psutil.virtual_memory()
+available_mb = memory_info.available / 1024**2
+st.write(f"**Max Available RAM:** {available_mb:.2f} MB")
+# Record RAM usage before the first upload in the Debug log
+process = psutil.Process(os.getpid())
+st.write(f"Memory at newest upload: {process.memory_info().rss / 1024 ** 2:.2f} MB")
 
+
+# -- ACTUAL PROCESS --
 # --- File Uploader (Multi-file Allowed) ---
 uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
 
+# --- Process Uploaded Files Immediately ---
 if uploaded_files:
-    # Record RAM usage before the newest upload in the Debug log
+    # Record RAM usage before processing in the Debug log.
     process = psutil.Process(os.getpid())
     update_debug_log(f"Memory before processing: {process.memory_info().rss / 1024 ** 2:.2f} MB")
     # Process each uploaded file one by one.
     for file in uploaded_files:
-        # Only process files that have not been processed yet. This ignores duplicates.
+        # Only process files that have not been processed yet (ignores duplicates).
         if file.name not in st.session_state.processed_file_names:
             update_debug_log(f"Processing file: **{file.name}**")
             try:
-                # Read the entire ZIP file into a BytesIO object named "z".
-                file_content = file.read()
-                zip_bytes = io.BytesIO(file_content)
-                with zipfile.ZipFile(zip_bytes) as z:
+                # Use the uploaded file directly without reading its entire content into a new BytesIO.
+                with zipfile.ZipFile(file) as z:
                     for item in z.namelist():
-                        # ONLY reads the 4th summary_confidences json file, as that is the only one we want.
+                        # Process only the desired nested JSON files.
                         if item.endswith("summary_confidences_4.json"):
                             file_identifier = f"{file.name}::{os.path.basename(item)}"
                             update_debug_log(f"  Reading: **{file_identifier}**")
@@ -113,17 +119,15 @@ if uploaded_files:
                             st.session_state.processed_records.append(record)
                 st.session_state.processed_file_names.append(file.name)
                 update_debug_log(f"Finished processing: **{file.name}**")
-                # Catch errors ( "e" ) both with Streamlit and the debug log.
             except Exception as e:
                 st.error(f"Error processing file {file.name}: {e}")
                 update_debug_log(f"Error processing file {file.name}: {e}")
             finally:
-                # Release memory used by this file.
+                # Release memory used by this file by closing it and clearing references.
                 try:
-                    file.close()  # Close the uploaded file.
+                    file.close()
                 except Exception:
                     pass
-                del file_content, zip_bytes
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024 ** 2:.2f} MB")
 
