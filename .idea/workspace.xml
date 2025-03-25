@@ -5,9 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/AlphaFold3 Results Compiler for Streamlit.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AlphaFold3 Results Compiler for Streamlit.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/streamlit/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/streamlit/config.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,7 +38,6 @@
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="AlphaFold3 Results Compiler for Streamlit" />
-      <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -170,7 +170,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742501672112</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Fixed debug &amp; spelling errors">
+      <option name="closed" value="true" />
+      <created>1742502249893</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1742502249893</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -195,6 +203,7 @@
     <MESSAGE value="Adjusted instruction /description text." />
     <MESSAGE value="Adjusted" />
     <MESSAGE value="Redesigned the upload process to extract data from uploaded ZIP files immediately, then release them from RAM, which should prevent the app from crashing. Increased the file upload limit from 200MB to 2GB. Revised instructions." />
-    <option name="LAST_COMMIT_MESSAGE" value="Redesigned the upload process to extract data from uploaded ZIP files immediately, then release them from RAM, which should prevent the app from crashing. Increased the file upload limit from 200MB to 2GB. Revised instructions." />
+    <MESSAGE value="Fixed debug &amp; spelling errors" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed debug &amp; spelling errors" />
   </component>
 </project>

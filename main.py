@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 import zipfile
+import psutil, os
 import io
 import json
 import re
-import os
 import gc
 
 
@@ -52,6 +52,9 @@ if "debug_messages" not in st.session_state:
     st.session_state.debug_messages = []
 # Create an empty container for the debug log.
 debug_container = st.empty()
+# Record RAM usage before the first upload in the Debug log
+process = psutil.Process(os.getpid())
+st.write(f"Memory on initialization: {process.memory_info().rss / 1024 ** 2:.2f} MB")
 
 def update_debug_log(message):
     # Append the new message.
@@ -64,6 +67,9 @@ def update_debug_log(message):
 uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
 
 if uploaded_files:
+    # Record RAM usage before the newest upload in the Debug log
+    process = psutil.Process(os.getpid())
+    update_debug_log(f"Memory before processing: {process.memory_info().rss / 1024 ** 2:.2f} MB")
     # Process each uploaded file one by one.
     for file in uploaded_files:
         # Only process files that have not been processed yet. This ignores duplicates.
@@ -119,6 +125,7 @@ if uploaded_files:
                     pass
                 del file_content, zip_bytes
                 gc.collect()
+                update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024 ** 2:.2f} MB")
 
 # --- Display Processed File Names ---
 if st.session_state.processed_file_names:
