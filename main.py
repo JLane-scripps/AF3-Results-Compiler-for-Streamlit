@@ -6,7 +6,8 @@ import io
 import json
 import re
 import gc
-
+# Uncomment if you want to use ijson for streaming JSON parsing
+# import ijson
 
 # --- Helper Function ---
 def extract_bait_prey(file_identifier):
@@ -15,7 +16,6 @@ def extract_bait_prey(file_identifier):
     Expected pattern: ..._bait_<Bait>_prey_<Prey>_summary_confidences_4.json
     This regex excludes '/' and '\' but allows underscores.
     """
-    # For ZIP-internal files, work with the basename only.
     if "::" in file_identifier:
         filename = os.path.basename(file_identifier.split("::")[-1])
     else:
@@ -27,80 +27,63 @@ def extract_bait_prey(file_identifier):
     else:
         return None, None
 
-
 # --- Session State Initialization ---
 if "processed_records" not in st.session_state:
     st.session_state.processed_records = []  # List of dictionaries from processed JSON files.
 if "processed_file_names" not in st.session_state:
-    st.session_state.processed_file_names = []  # List of names of ZIP files already processed.
-
-# --- App Title and Instructions ---
-st.title("AlphaFold3 Results Compiler")
-st.write("""
-This app compiles Summary Confidence Reports to easily analyze.
-
-Upload the ZIP files downloaded from AlphaFold3. (Drag & Drop or Browse). 
-ZIP files MUST be smaller than 2GB each. Do not upload more than a combined 2GB at a time. 
-You may continue adding more ZIP files after the previous batch has been processed.  
-Each file will be processed immediately upon upload (one at a time), and then its memory will be released.  
-The names of processed files will be displayed. Duplicate uploads will be ignored.
-When finished, click **Generate Excel** to consolidate all results.
-""")
-
-# --- Initialize the debug log list in session state if it doesn't exist. ---
+    st.session_state.processed_file_names = []  # Names of ZIP files already processed.
 if "debug_messages" not in st.session_state:
     st.session_state.debug_messages = []
-# Create an empty container for the debug log.
-debug_container = st.empty()
 
+# Debug log container
+debug_container = st.empty()
 def update_debug_log(message):
-    # Append the new message.
     st.session_state.debug_messages.append(message)
-    # Update the text area (height can be adjusted as needed).
     debug_container.text_area("Debug Log", "\n".join(st.session_state.debug_messages), height=150)
 
-# -- SYSTEM MEMORY --
-# Get system memory details
+# --- Display System Memory ---
 memory_info = psutil.virtual_memory()
 available_mb = memory_info.available / 1024**2
 st.write(f"**Max Available RAM:** {available_mb:.2f} MB")
-# Record RAM usage before the first upload in the Debug log
 process = psutil.Process(os.getpid())
-st.write(f"Memory at newest upload: {process.memory_info().rss / 1024 ** 2:.2f} MB")
+st.write(f"Memory at newest upload: {process.memory_info().rss / 1024**2:.2f} MB")
 
+# --- File Uploader for ZIP Files ---
+uploaded_zip_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
 
-# -- ACTUAL PROCESS --
-# --- File Uploader (Multi-file Allowed) ---
-uploaded_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
+# --- File Uploader for Existing Excel Files (Optional) ---
+uploaded_excel_files = st.file_uploader("Upload existing Excel files to combine (optional)", type=["xlsx"], accept_multiple_files=True)
 
-# --- Process Uploaded Files Immediately ---
-if uploaded_files:
-    # Record RAM usage before processing in the Debug log.
-    process = psutil.Process(os.getpid())
-    update_debug_log(f"Memory before processing: {process.memory_info().rss / 1024 ** 2:.2f} MB")
-    # Process each uploaded file one by one.
-    for file in uploaded_files:
-        # Only process files that have not been processed yet (ignores duplicates).
+# --- Process Uploaded ZIP Files Immediately Using Streaming ---
+if uploaded_zip_files:
+    update_debug_log(f"Memory before processing ZIPs: {process.memory_info().rss / 1024**2:.2f} MB")
+    for file in uploaded_zip_files:
         if file.name not in st.session_state.processed_file_names:
-            update_debug_log(f"Processing file: **{file.name}**")
+            update_debug_log(f"Processing file: {file.name}")
             try:
-                # Use the uploaded file directly without reading its entire content into a new BytesIO.
+                # Use the uploaded file object directly without reading it entirely into a new BytesIO.
                 with zipfile.ZipFile(file) as z:
                     for item in z.namelist():
-                        # Process only the desired nested JSON files.
+                        # Process only the nested JSON file we need.
                         if item.endswith("summary_confidences_4.json"):
                             file_identifier = f"{file.name}::{os.path.basename(item)}"
-                            update_debug_log(f"  Reading: **{file_identifier}**")
+                            update_debug_log(f"  Reading: {file_identifier}")
                             try:
                                 with z.open(item) as f:
+                                    # If the JSON files are very large, you could use a streaming parser like ijson:
+                                    # parser = ijson.parse(f)
+                                    # data = {}  # Build your JSON object piece by piece.
+                                    # For now, we assume the JSON file is reasonably small:
                                     data = json.load(f)
                             except Exception as e:
                                 st.error(f"Error decoding JSON in {file_identifier}: {e}")
+                                update_debug_log(f"Error decoding JSON in {file_identifier}: {e}")
                                 continue
 
                             bait, prey = extract_bait_prey(file_identifier)
                             if bait is None or prey is None:
                                 st.warning(f"DEBUG: Could not extract bait/prey from {file_identifier}")
+                                update_debug_log(f"DEBUG: Could not extract bait/prey from {file_identifier}")
                                 bait, prey = "Unknown", "Unknown"
 
                             record = {
@@ -118,51 +101,57 @@ if uploaded_files:
                             }
                             st.session_state.processed_records.append(record)
                 st.session_state.processed_file_names.append(file.name)
-                update_debug_log(f"Finished processing: **{file.name}**")
+                update_debug_log(f"Finished processing: {file.name}")
             except Exception as e:
                 st.error(f"Error processing file {file.name}: {e}")
                 update_debug_log(f"Error processing file {file.name}: {e}")
             finally:
-                # Release memory used by this file by closing it and clearing references.
                 try:
                     file.close()
                 except Exception:
                     pass
                 gc.collect()
-                update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024 ** 2:.2f} MB")
+                update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
 
-# --- Display Processed File Names ---
+# --- Display Processed ZIP File Names ---
 if st.session_state.processed_file_names:
-    st.write("### Processed Files:")
+    st.write("### Processed ZIP Files:")
     for name in st.session_state.processed_file_names:
         st.write(name)
 
 # --- Generate Excel Button ---
-if st.session_state.processed_records:
+if st.session_state.processed_records or uploaded_excel_files:
     if st.button("Generate Excel"):
-        # Combine all processed records into a DataFrame.
-        df = pd.DataFrame(st.session_state.processed_records)
-        # Sort the DataFrame by iptm in descending order.
-        df = df.sort_values(by="iptm", ascending=False)
+        # Build DataFrame from processed ZIP data.
+        df_zip = pd.DataFrame(st.session_state.processed_records) if st.session_state.processed_records else pd.DataFrame()
+        df_existing_list = []
+        if uploaded_excel_files:
+            for excel_file in uploaded_excel_files:
+                try:
+                    df_existing = pd.read_excel(excel_file)
+                    df_existing_list.append(df_existing)
+                except Exception as e:
+                    st.error(f"Error reading Excel file {excel_file.name}: {e}")
+        if df_existing_list:
+            df_existing_all = pd.concat(df_existing_list, ignore_index=True)
+            combined_df = pd.concat([df_zip, df_existing_all], ignore_index=True)
+        else:
+            combined_df = df_zip
 
-        # Create an in-memory Excel file with one sheet per Bait.
+        combined_df = combined_df.sort_values(by="iptm", ascending=False)
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
             workbook = writer.book
-            # Define conditional formats.
             format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
-            format_light_blue = workbook.add_format({'bg_color': '#ADD8E6'})
-            format_light_gray = workbook.add_format({'bg_color': '#D3D3D3'})
+            format_light_blue   = workbook.add_format({'bg_color': '#ADD8E6'})
+            format_light_gray   = workbook.add_format({'bg_color': '#D3D3D3'})
 
-            for bait, group_df in df.groupby("Bait"):
-                # Use bait as sheet name (max 31 characters).
+            for bait, group_df in combined_df.groupby("Bait"):
                 sheet_name = str(bait)[:31]
                 group_df.to_excel(writer, sheet_name=sheet_name, index=False)
                 worksheet = writer.sheets[sheet_name]
-                num_rows = len(group_df) + 1  # +1 for header.
-                iptm_range = f"C2:C{num_rows}"  # Assuming 'iptm' is column C.
-
-                # Apply conditional formatting.
+                num_rows = len(group_df) + 1
+                iptm_range = f"C2:C{num_rows}"
                 worksheet.conditional_format(iptm_range, {
                     'type': 'cell',
                     'criteria': '>',
@@ -184,7 +173,7 @@ if st.session_state.processed_records:
         output.seek(0)
         processed_data = output.getvalue()
         st.download_button(
-            label="Download Excel File",
+            label="Download Consolidated Excel File",
             data=processed_data,
             file_name="summary_confidences_export.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
