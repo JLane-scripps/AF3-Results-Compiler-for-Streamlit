@@ -2,3 +2,4 @@ streamlit~=1.43.0
 pandas~=2.2.3
 XlsxWriter~=3.2.2
 psutil~=7.0.0
+ijson~=3.3.0
