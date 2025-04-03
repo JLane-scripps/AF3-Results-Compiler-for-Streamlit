@@ -59,6 +59,9 @@ def update_debug_log(message):
 # --- Display System Memory ---
 process = psutil.Process(os.getpid())
 st.write(f"Memory at newest upload: {process.memory_info().rss / 1024**2:.2f} MB")
+if st.button("Check Memory Usage"):
+    mem_usage_mb = process.memory_info().rss / 1024**2  # Convert bytes to MB
+    st.write(f"Current Memory Usage: {mem_usage_mb:.2f} MB")
 
 # --- File Uploader for ZIP Files ---
 uploaded_zip_files = st.file_uploader("Upload ZIP files", type=["zip"], accept_multiple_files=True)
@@ -122,6 +125,7 @@ if uploaded_zip_files:
                     file.close()
                 except Exception:
                     update_debug_log(f"File {file.name}: {e} failed to close.")
+                del file
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
 
