@@ -89,7 +89,7 @@ if uploaded_zip_files:
                                     parser = ijson.parse(f)
                                     data = {}  # Build your JSON object piece by piece.
                                     # For now, we assume the JSON file is reasonably small:
-                                    # data = json.load(f)
+                                    data = json.load(f)
                             except Exception as e:
                                 st.error(f"Error decoding JSON in {file_identifier}: {e}")
                                 update_debug_log(f"Error decoding JSON in {file_identifier}: {e}")
@@ -125,6 +125,7 @@ if uploaded_zip_files:
                     file.close()
                 except Exception:
                     update_debug_log(f"File {file.name}: {e} failed to close.")
+                del file
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
 

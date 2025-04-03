@@ -240,7 +240,15 @@
       <option name="project" value="LOCAL" />
       <updated>1743708504684</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="Undid del operation test; critical failure.">
+      <option name="closed" value="true" />
+      <created>1743708896324</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1743708896324</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -271,6 +279,7 @@
     <MESSAGE value="Removed BytesIO method, which hindered more than helped." />
     <MESSAGE value="Swapped json streaming method and red" />
     <MESSAGE value="Swapped json streaming method, reduced max file size, attempted debug on file.close() &amp; garbage collection." />
-    <option name="LAST_COMMIT_MESSAGE" value="Swapped json streaming method, reduced max file size, attempted debug on file.close() &amp; garbage collection." />
+    <MESSAGE value="Undid del operation test; critical failure." />
+    <option name="LAST_COMMIT_MESSAGE" value="Undid del operation test; critical failure." />
   </component>
 </project>
