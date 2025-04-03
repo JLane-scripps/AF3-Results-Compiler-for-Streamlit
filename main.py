@@ -1,13 +1,28 @@
+import ijson
 import streamlit as st
 import pandas as pd
 import zipfile
-import psutil, os
+import psutil
+import os
 import io
 import json
 import re
 import gc
 # Uncomment if you want to use ijson for streaming JSON parsing
 # import ijson
+
+# --- App Title and Instructions ---
+st.title("AlphaFold3 Results Compiler")
+st.write("""
+This app compiles Summary Confidence Reports from AlphaFold3 to easily analyze.
+
+Upload the ZIP files downloaded from AlphaFold3. (Drag & Drop or Browse).  
+ZIP files MUST be smaller than 1GB each. Do not upload more than a combined 1GB at a time.  
+Each file will be processed immediately upon upload (one at a time). Duplicate uploads will be ignored.
+
+You may also upload finished Excel files (generated in previous runs) to combine with new data.  
+When finished, click **Generate Excel** to consolidate all results.
+""")
 
 # --- Helper Function ---
 def extract_bait_prey(file_identifier):
@@ -42,9 +57,6 @@ def update_debug_log(message):
     debug_container.text_area("Debug Log", "\n".join(st.session_state.debug_messages), height=150)
 
 # --- Display System Memory ---
-memory_info = psutil.virtual_memory()
-available_mb = memory_info.available / 1024**2
-st.write(f"**Max Available RAM:** {available_mb:.2f} MB")
 process = psutil.Process(os.getpid())
 st.write(f"Memory at newest upload: {process.memory_info().rss / 1024**2:.2f} MB")
 
@@ -70,11 +82,11 @@ if uploaded_zip_files:
                             update_debug_log(f"  Reading: {file_identifier}")
                             try:
                                 with z.open(item) as f:
-                                    # If the JSON files are very large, you could use a streaming parser like ijson:
-                                    # parser = ijson.parse(f)
-                                    # data = {}  # Build your JSON object piece by piece.
+                                    # If the JSON files are very large, use a streaming parser like ijson.
+                                    parser = ijson.parse(f)
+                                    data = {}  # Build your JSON object piece by piece.
                                     # For now, we assume the JSON file is reasonably small:
-                                    data = json.load(f)
+                                    # data = json.load(f)
                             except Exception as e:
                                 st.error(f"Error decoding JSON in {file_identifier}: {e}")
                                 update_debug_log(f"Error decoding JSON in {file_identifier}: {e}")
@@ -109,7 +121,7 @@ if uploaded_zip_files:
                 try:
                     file.close()
                 except Exception:
-                    pass
+                    update_debug_log(f"File {file.name}: {e} failed to close.")
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
 

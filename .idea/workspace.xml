@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="Removed BytesIO method, which hindered more than helped.">
-      <change beforePath="$PROJECT_DIR$/.idea/AlphaFold3 Results Compiler for Streamlit.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AlphaFold3 Results Compiler for Streamlit.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="9336635f-3918-424a-8f5a-4323a8b5f761" name="Changes" comment="Swapped json streaming method and red">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.streamlit/config.toml" beforeDir="false" afterPath="$PROJECT_DIR$/.streamlit/config.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -211,7 +210,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742942973359</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Attempting a streaming method to reduce concurrent RAM usage.">
+      <option name="closed" value="true" />
+      <created>1743101342000</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1743101342000</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -238,6 +245,7 @@
     <MESSAGE value="Redesigned the upload process to extract data from uploaded ZIP files immediately, then release them from RAM, which should prevent the app from crashing. Increased the file upload limit from 200MB to 2GB. Revised instructions." />
     <MESSAGE value="Fixed debug &amp; spelling errors" />
     <MESSAGE value="Added precise RAM checks in debug log" />
+    <MESSAGE value="Attempting a streaming method to reduce concurrent RAM usage." />
     <MESSAGE value="Removed BytesIO method, which hindered more than helped." />
     <option name="LAST_COMMIT_MESSAGE" value="Removed BytesIO method, which hindered more than helped." />
   </component>
