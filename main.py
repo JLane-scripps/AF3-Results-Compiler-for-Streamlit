@@ -125,7 +125,6 @@ if uploaded_zip_files:
                     file.close()
                 except Exception:
                     update_debug_log(f"File {file.name}: {e} failed to close.")
-                del file
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
 
