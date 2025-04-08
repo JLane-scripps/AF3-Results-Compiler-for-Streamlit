@@ -1,6 +1,7 @@
 import ijson
 import streamlit as st
 import pandas as pd
+import openpyxl
 import zipfile
 import psutil
 import os
@@ -8,8 +9,7 @@ import io
 import json
 import re
 import gc
-# Uncomment if you want to use ijson for streaming JSON parsing
-# import ijson
+# import ijson     # Uncomment if you want to use ijson for streaming JSON parsing
 
 # --- App Title and Instructions ---
 st.title("AlphaFold3 Results Compiler")
@@ -18,9 +18,11 @@ This app compiles Summary Confidence Reports from AlphaFold3 to easily analyze.
 
 Upload the ZIP files downloaded from AlphaFold3. (Drag & Drop or Browse).  
 ZIP files MUST be smaller than 1GB each. Do not upload more than a combined 1GB at a time.  
-Each file will be processed immediately upon upload (one at a time). Duplicate uploads will be ignored.
+Click the "X" on each uploaded file after it has finished processing before adding more.
+Each file will be processed immediately upon upload. Files with duplicate *names* will be ignored. 
 
-You may also upload finished Excel files (generated in previous runs) to combine with new data.  
+You may also upload finished Excel files (generated in previous runs) to combine with new data. 
+Refreshing the page will clear all previous data; Do this before combining previously generated Excel files with new ZIP files.
 When finished, click **Generate Excel** to consolidate all results.
 """)
 
