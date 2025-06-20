@@ -77,27 +77,32 @@ if uploaded_zip_files:
         if file.name not in st.session_state.processed_file_names:
             update_debug_log(f"Processing file: {file.name}")
             try:
-                # work directly with the uploaded file object
+                # Use the uploaded file object directly without reading it entirely into a new BytesIO.
                 with zipfile.ZipFile(file) as z:
                     for item in z.namelist():
+                        # Process only the nested JSON file we need.
                         if item.endswith("summary_confidences_4.json"):
-                            file_id = f"{file.name}::{os.path.basename(item)}"
-                            update_debug_log(f"  Reading: {file_id}")
+                            file_identifier = f"{file.name}::{os.path.basename(item)}"
+                            update_debug_log(f"  Reading: {file_identifier}")
                             try:
-                                with z.open(item) as f_json:
-                                    # simply load the JSON in one shot:
-                                    data = json.load(f_json)
-                            except Exception as e_load:
-                                st.error(f"Error decoding JSON in {file_id}: {e_load}")
-                                update_debug_log(f"Error decoding JSON in {file_id}: {e_load}")
+                                with z.open(item) as f:
+                                    # If the JSON files are very large, use a streaming parser like ijson.
+                                    parser = ijson.parse(f)
+                                    data = {}  # Build your JSON object piece by piece.
+                                    # For now, we assume the JSON file is reasonably small:
+                                    data = json.load(f)
+                            except Exception as e:
+                                st.error(f"Error decoding JSON in {file_identifier}: {e}")
+                                update_debug_log(f"Error decoding JSON in {file_identifier}: {e}")
                                 continue
 
-                            bait, prey = extract_bait_prey(file_id)
+                            bait, prey = extract_bait_prey(file_identifier)
                             if bait is None or prey is None:
-                                update_debug_log(f"DEBUG: Could not extract bait/prey from {file_id}")
+                                st.warning(f"DEBUG: Could not extract bait/prey from {file_identifier}")
+                                update_debug_log(f"DEBUG: Could not extract bait/prey from {file_identifier}")
                                 bait, prey = "Unknown", "Unknown"
 
-                            st.session_state.processed_records.append({
+                            record = {
                                 "Bait": bait,
                                 "Prey": prey,
                                 "iptm": data.get("iptm"),
@@ -109,25 +114,21 @@ if uploaded_zip_files:
                                 "chain ptm": json.dumps(data.get("chain_ptm")),
                                 "chain pair iptm": json.dumps(data.get("chain_pair_iptm")),
                                 "chain pair pae min": json.dumps(data.get("chain_pair_pae_min"))
-                            })
-
+                            }
+                            st.session_state.processed_records.append(record)
                 st.session_state.processed_file_names.append(file.name)
                 update_debug_log(f"Finished processing: {file.name}")
-
-            except Exception as e_proc:
-                st.error(f"Error processing file {file.name}: {e_proc}")
-                update_debug_log(f"Error processing file {file.name}: {e_proc}")
-
+            except Exception as e:
+                st.error(f"Error processing file {file.name}: {e}")
+                update_debug_log(f"Error processing file {file.name}: {e}")
             finally:
-                # always try to close and then gc.collect()
                 try:
                     file.close()
-                except Exception as e_close:
-                    update_debug_log(f"Error closing file {file.name}: {e_close}")
+                except Exception:
+                    update_debug_log(f"File {file.name}: {e} failed to close.")
                 del file
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
-
 
 # --- Display Processed ZIP File Names ---
 if st.session_state.processed_file_names:
