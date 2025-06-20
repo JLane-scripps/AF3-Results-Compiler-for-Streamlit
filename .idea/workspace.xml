@@ -13,6 +13,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -310,7 +315,15 @@
       <option name="project" value="LOCAL" />
       <updated>1750455537426</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="Revert &quot;Fixed cache clearing and updated instructions; testing Excel uploader&quot;&#10;&#10;This reverts commit ce2b25d8071a44a9ac694706713cc7c915572129.">
+      <option name="closed" value="true" />
+      <created>1750461306827</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1750461306827</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -346,6 +359,8 @@
     <MESSAGE value="Fixed cache clearing and updated instructions; testing Excel uploader" />
     <MESSAGE value="&quot;Generate Excel File&quot; Button fix" />
     <MESSAGE value="&quot;Generate Excel File&quot; Button fix. Removed stray ijson.parse() call causing errors; fixed non-declared error catch." />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;Generate Excel File&quot; Button fix. Removed stray ijson.parse() call causing errors; fixed non-declared error catch." />
+    <MESSAGE value="Revert &quot;Fixed cache clearing and updated instructions; testing Excel uploader&quot;&#10;&#10;This reverts commit ce2b25d8071a44a9ac694706713cc7c915572129.&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;" />
+    <MESSAGE value="Revert &quot;Fixed cache clearing and updated instructions; testing Excel uploader&quot;&#10;&#10;This reverts commit ce2b25d8071a44a9ac694706713cc7c915572129." />
+    <option name="LAST_COMMIT_MESSAGE" value="Revert &quot;Fixed cache clearing and updated instructions; testing Excel uploader&quot;&#10;&#10;This reverts commit ce2b25d8071a44a9ac694706713cc7c915572129." />
   </component>
 </project>
