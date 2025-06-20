@@ -77,32 +77,27 @@ if uploaded_zip_files:
         if file.name not in st.session_state.processed_file_names:
             update_debug_log(f"Processing file: {file.name}")
             try:
-                # Use the uploaded file object directly without reading it entirely into a new BytesIO.
+                # work directly with the uploaded file object
                 with zipfile.ZipFile(file) as z:
                     for item in z.namelist():
-                        # Process only the nested JSON file we need.
                         if item.endswith("summary_confidences_4.json"):
-                            file_identifier = f"{file.name}::{os.path.basename(item)}"
-                            update_debug_log(f"  Reading: {file_identifier}")
+                            file_id = f"{file.name}::{os.path.basename(item)}"
+                            update_debug_log(f"  Reading: {file_id}")
                             try:
-                                with z.open(item) as f:
-                                    # If the JSON files are very large, use a streaming parser like ijson.
-                                    parser = ijson.parse(f)
-                                    data = {}  # Build your JSON object piece by piece.
-                                    # For now, we assume the JSON file is reasonably small:
-                                    data = json.load(f)
-                            except Exception as e:
-                                st.error(f"Error decoding JSON in {file_identifier}: {e}")
-                                update_debug_log(f"Error decoding JSON in {file_identifier}: {e}")
+                                with z.open(item) as f_json:
+                                    # simply load the JSON in one shot:
+                                    data = json.load(f_json)
+                            except Exception as e_load:
+                                st.error(f"Error decoding JSON in {file_id}: {e_load}")
+                                update_debug_log(f"Error decoding JSON in {file_id}: {e_load}")
                                 continue
 
-                            bait, prey = extract_bait_prey(file_identifier)
+                            bait, prey = extract_bait_prey(file_id)
                             if bait is None or prey is None:
-                                st.warning(f"DEBUG: Could not extract bait/prey from {file_identifier}")
-                                update_debug_log(f"DEBUG: Could not extract bait/prey from {file_identifier}")
+                                update_debug_log(f"DEBUG: Could not extract bait/prey from {file_id}")
                                 bait, prey = "Unknown", "Unknown"
 
-                            record = {
+                            st.session_state.processed_records.append({
                                 "Bait": bait,
                                 "Prey": prey,
                                 "iptm": data.get("iptm"),
@@ -114,21 +109,25 @@ if uploaded_zip_files:
                                 "chain ptm": json.dumps(data.get("chain_ptm")),
                                 "chain pair iptm": json.dumps(data.get("chain_pair_iptm")),
                                 "chain pair pae min": json.dumps(data.get("chain_pair_pae_min"))
-                            }
-                            st.session_state.processed_records.append(record)
+                            })
+
                 st.session_state.processed_file_names.append(file.name)
                 update_debug_log(f"Finished processing: {file.name}")
-            except Exception as e:
-                st.error(f"Error processing file {file.name}: {e}")
-                update_debug_log(f"Error processing file {file.name}: {e}")
+
+            except Exception as e_proc:
+                st.error(f"Error processing file {file.name}: {e_proc}")
+                update_debug_log(f"Error processing file {file.name}: {e_proc}")
+
             finally:
+                # always try to close and then gc.collect()
                 try:
                     file.close()
-                except Exception:
-                    update_debug_log(f"File {file.name}: {e} failed to close.")
+                except Exception as e_close:
+                    update_debug_log(f"Error closing file {file.name}: {e_close}")
                 del file
                 gc.collect()
                 update_debug_log(f"Memory after cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
+
 
 # --- Display Processed ZIP File Names ---
 if st.session_state.processed_file_names:
@@ -137,60 +136,61 @@ if st.session_state.processed_file_names:
         st.write(name)
 
 # --- Generate Excel Button ---
-if st.button("Generate Excel"):
-# Build DataFrame from processed ZIP data.
-    df_zip = pd.DataFrame(st.session_state.processed_records) if st.session_state.processed_records else pd.DataFrame()
-    df_existing_list = []
-    if uploaded_excel_files:
-        for excel_file in uploaded_excel_files:
-            try:
-                df_existing = pd.read_excel(excel_file)
-                df_existing_list.append(df_existing)
-            except Exception as e:
-                st.error(f"Error reading Excel file {excel_file.name}: {e}")
-    if df_existing_list:
-        df_existing_all = pd.concat(df_existing_list, ignore_index=True)
-        combined_df = pd.concat([df_zip, df_existing_all], ignore_index=True)
-    else:
-        combined_df = df_zip
+if st.session_state.processed_records or uploaded_excel_files:
+    if st.button("Generate Excel"):
+        # Build DataFrame from processed ZIP data.
+        df_zip = pd.DataFrame(st.session_state.processed_records) if st.session_state.processed_records else pd.DataFrame()
+        df_existing_list = []
+        if uploaded_excel_files:
+            for excel_file in uploaded_excel_files:
+                try:
+                    df_existing = pd.read_excel(excel_file)
+                    df_existing_list.append(df_existing)
+                except Exception as e:
+                    st.error(f"Error reading Excel file {excel_file.name}: {e}")
+        if df_existing_list:
+            df_existing_all = pd.concat(df_existing_list, ignore_index=True)
+            combined_df = pd.concat([df_zip, df_existing_all], ignore_index=True)
+        else:
+            combined_df = df_zip
 
-    combined_df = combined_df.sort_values(by="iptm", ascending=False)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        workbook = writer.book
-        format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
-        format_light_blue   = workbook.add_format({'bg_color': '#ADD8E6'})
-        format_light_gray   = workbook.add_format({'bg_color': '#D3D3D3'})
+        combined_df = combined_df.sort_values(by="iptm", ascending=False)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            workbook = writer.book
+            format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
+            format_light_blue   = workbook.add_format({'bg_color': '#ADD8E6'})
+            format_light_gray   = workbook.add_format({'bg_color': '#D3D3D3'})
 
-        for bait, group_df in combined_df.groupby("Bait"):
-            sheet_name = str(bait)[:31]
-            group_df.to_excel(writer, sheet_name=sheet_name, index=False)
-            worksheet = writer.sheets[sheet_name]
-            num_rows = len(group_df) + 1
-            iptm_range = f"C2:C{num_rows}"
-            worksheet.conditional_format(iptm_range, {
-                'type': 'cell',
-                'criteria': '>',
-                'value': 0.79,
-                'format': format_light_yellow
-            })
-            worksheet.conditional_format(iptm_range, {
-                'type': 'cell',
-                'criteria': 'between',
-                'minimum': 0.6,
-                'maximum': 0.79,
-                'format': format_light_blue
-            })
-            worksheet.conditional_format(iptm_range, {
-                'type': 'formula',
-                'criteria': '=AND(C2>0.4, C2<0.6)',
-                'format': format_light_gray
-            })
-    output.seek(0)
-    processed_data = output.getvalue()
-    st.download_button(
-        label="Download Consolidated Excel File",
-        data=processed_data,
-        file_name="summary_confidences_export.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+            for bait, group_df in combined_df.groupby("Bait"):
+                sheet_name = str(bait)[:31]
+                group_df.to_excel(writer, sheet_name=sheet_name, index=False)
+                worksheet = writer.sheets[sheet_name]
+                num_rows = len(group_df) + 1
+                iptm_range = f"C2:C{num_rows}"
+                worksheet.conditional_format(iptm_range, {
+                    'type': 'cell',
+                    'criteria': '>',
+                    'value': 0.79,
+                    'format': format_light_yellow
+                })
+                worksheet.conditional_format(iptm_range, {
+                    'type': 'cell',
+                    'criteria': 'between',
+                    'minimum': 0.6,
+                    'maximum': 0.79,
+                    'format': format_light_blue
+                })
+                worksheet.conditional_format(iptm_range, {
+                    'type': 'formula',
+                    'criteria': '=AND(C2>0.4, C2<0.6)',
+                    'format': format_light_gray
+                })
+        output.seek(0)
+        processed_data = output.getvalue()
+        st.download_button(
+            label="Download Consolidated Excel File",
+            data=processed_data,
+            file_name="summary_confidences_export.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
