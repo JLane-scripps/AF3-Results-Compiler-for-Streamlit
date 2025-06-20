@@ -137,61 +137,60 @@ if st.session_state.processed_file_names:
         st.write(name)
 
 # --- Generate Excel Button ---
-if st.session_state.processed_records or uploaded_excel_files:
-    if st.button("Generate Excel"):
-        # Build DataFrame from processed ZIP data.
-        df_zip = pd.DataFrame(st.session_state.processed_records) if st.session_state.processed_records else pd.DataFrame()
-        df_existing_list = []
-        if uploaded_excel_files:
-            for excel_file in uploaded_excel_files:
-                try:
-                    df_existing = pd.read_excel(excel_file)
-                    df_existing_list.append(df_existing)
-                except Exception as e:
-                    st.error(f"Error reading Excel file {excel_file.name}: {e}")
-        if df_existing_list:
-            df_existing_all = pd.concat(df_existing_list, ignore_index=True)
-            combined_df = pd.concat([df_zip, df_existing_all], ignore_index=True)
-        else:
-            combined_df = df_zip
+if st.button("Generate Excel"):
+# Build DataFrame from processed ZIP data.
+    df_zip = pd.DataFrame(st.session_state.processed_records) if st.session_state.processed_records else pd.DataFrame()
+    df_existing_list = []
+    if uploaded_excel_files:
+        for excel_file in uploaded_excel_files:
+            try:
+                df_existing = pd.read_excel(excel_file)
+                df_existing_list.append(df_existing)
+            except Exception as e:
+                st.error(f"Error reading Excel file {excel_file.name}: {e}")
+    if df_existing_list:
+        df_existing_all = pd.concat(df_existing_list, ignore_index=True)
+        combined_df = pd.concat([df_zip, df_existing_all], ignore_index=True)
+    else:
+        combined_df = df_zip
 
-        combined_df = combined_df.sort_values(by="iptm", ascending=False)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            workbook = writer.book
-            format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
-            format_light_blue   = workbook.add_format({'bg_color': '#ADD8E6'})
-            format_light_gray   = workbook.add_format({'bg_color': '#D3D3D3'})
+    combined_df = combined_df.sort_values(by="iptm", ascending=False)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        workbook = writer.book
+        format_light_yellow = workbook.add_format({'bg_color': '#FFFF99'})
+        format_light_blue   = workbook.add_format({'bg_color': '#ADD8E6'})
+        format_light_gray   = workbook.add_format({'bg_color': '#D3D3D3'})
 
-            for bait, group_df in combined_df.groupby("Bait"):
-                sheet_name = str(bait)[:31]
-                group_df.to_excel(writer, sheet_name=sheet_name, index=False)
-                worksheet = writer.sheets[sheet_name]
-                num_rows = len(group_df) + 1
-                iptm_range = f"C2:C{num_rows}"
-                worksheet.conditional_format(iptm_range, {
-                    'type': 'cell',
-                    'criteria': '>',
-                    'value': 0.79,
-                    'format': format_light_yellow
-                })
-                worksheet.conditional_format(iptm_range, {
-                    'type': 'cell',
-                    'criteria': 'between',
-                    'minimum': 0.6,
-                    'maximum': 0.79,
-                    'format': format_light_blue
-                })
-                worksheet.conditional_format(iptm_range, {
-                    'type': 'formula',
-                    'criteria': '=AND(C2>0.4, C2<0.6)',
-                    'format': format_light_gray
-                })
-        output.seek(0)
-        processed_data = output.getvalue()
-        st.download_button(
-            label="Download Consolidated Excel File",
-            data=processed_data,
-            file_name="summary_confidences_export.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        for bait, group_df in combined_df.groupby("Bait"):
+            sheet_name = str(bait)[:31]
+            group_df.to_excel(writer, sheet_name=sheet_name, index=False)
+            worksheet = writer.sheets[sheet_name]
+            num_rows = len(group_df) + 1
+            iptm_range = f"C2:C{num_rows}"
+            worksheet.conditional_format(iptm_range, {
+                'type': 'cell',
+                'criteria': '>',
+                'value': 0.79,
+                'format': format_light_yellow
+            })
+            worksheet.conditional_format(iptm_range, {
+                'type': 'cell',
+                'criteria': 'between',
+                'minimum': 0.6,
+                'maximum': 0.79,
+                'format': format_light_blue
+            })
+            worksheet.conditional_format(iptm_range, {
+                'type': 'formula',
+                'criteria': '=AND(C2>0.4, C2<0.6)',
+                'format': format_light_gray
+            })
+    output.seek(0)
+    processed_data = output.getvalue()
+    st.download_button(
+        label="Download Consolidated Excel File",
+        data=processed_data,
+        file_name="summary_confidences_export.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
